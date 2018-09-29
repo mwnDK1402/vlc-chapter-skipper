@@ -46,19 +46,31 @@ function activate()
 
 	d:add_label( "* Chapter indices are separated by commas (,) and can be negative indicating reverse ordering with -1 being the last chapter.", 2, 6, 1, 1 )
 	d:add_label( "Chapter indices* to skip:", 1, 1, 1, 1 )
-	chapterToSkipInput = d:add_text_input( 1, 1, 2, 1, 1 )
+	chaptersToSkipInput = d:add_text_input( 1, 1, 2, 1, 1 )
 	d:add_button("Enable", click_Start, 1, 3, 1, 1)
 	d:add_button("Disable", click_Disable, 1, 4, 1, 1)
 end
 
-chapterToSkip = -1
+chapterstoskip = {}
+
+function chapterstoskip.set(num)
+	chapterstoskip[num] = true
+end
+
+function chapterstoskip.contains(num)
+	return chapterstoskip[num] ~= nil
+end
+
+function chapterstoskip.clear()
+	chapterstoskip = {}
+end
 
 --Verify input options and enter check loop
 function click_Start()
 	vlc.msg.info("Enabling chapter skipper")
-	chapterToSkip = tonumber(chapterToSkipInput:get_text())
-	vlc.msg.info("Target chapter:")
-	vlc.msg.info(chapterToSkip)
+
+	parse_chapterstoskip(chaptersToSkipInput:get_text())
+	
 	vlc.playlist.play()
 
 	if restartOption:get_checked() then
@@ -74,6 +86,24 @@ function click_Start()
 	start_checker()
 end
 
+function parse_chapterstoskip(textinput)
+	local chaptercount = get_chaptercount()
+
+	local pattern = "%-?%d+"
+	local matches = string.gmatch(textinput, pattern)
+
+	vlc.msg.info("Chapters to skip:")
+	for w in matches do
+		local num = tonumber(w)
+		if num < 0 then
+			num = chaptercount + num
+		end
+		chapterstoskip.set(num)
+
+		vlc.msg.info(num)
+	end
+end
+
 keep_checking = true --to disable the check loop on deactivation
 
 --Start chapter skip loop
@@ -87,14 +117,20 @@ function start_checker()
 	end
 end
 
+
+
 -- If the current chapter matches the one we want to skip, skip it.
 -- There's room for improvement here with chapter lists (instead of just one),
 -- but that's probably for a future version.
 function chapter_skip_check()
-	if get_chapter() == chapterToSkip then
+	if chapterstoskip.contains(get_chapter()) then
 		vlc.msg.info("Skipping chapter")
 		skip_chapter()
 	end
+end
+
+function get_chaptercount()
+	return #vlc.var.get_list(vlc.object.input(), "chapter")
 end
 
 -- Get chapter number
