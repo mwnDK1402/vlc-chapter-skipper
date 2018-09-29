@@ -1,5 +1,6 @@
 @echo off
 
+REM Ensure VLC directory exists
 set vlcpath=%appdata%\vlc
 
 if not exist %vlcpath% (
@@ -8,6 +9,7 @@ if not exist %vlcpath% (
   exit /b
 )
 
+REM Ensure directory exists
 set extpath=%vlcpath%\lua\extensions
 
 if not exist %extpath% (
@@ -17,18 +19,19 @@ if not exist %extpath% (
   @echo off
 )
 
-set targetpath=%extpath%\chapter_skipper.lua
-
-if exist %targetpath% (
+REM Show changes
+set mainpath=%extpath%\chapter_skipper.lua
+if exist %mainpath% (
   @echo on
   echo Updating extension...
   @echo off
 )
 
-if not exist %targetpath% (
+if not exist %mainpath% (
   @echo on
   echo Installing extension...
   @echo off
 )
 
-copy chapter_skipper.lua %extpath%
+REM Copy extension and configuration
+copy *.lua %extpath%

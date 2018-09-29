@@ -32,8 +32,9 @@ function descriptor()
 	}
 end
 
+-- local config = require "chapter_skipper_config"
+
 keep_checking = true --to disable the check loop on deactivation
-sleep_duration = 5 --seconds apart to run check
 chapterToSkip = -1
 
 --Run on plugin activation
@@ -50,13 +51,13 @@ function activate()
 
 	d:add_label( "Chapter # to skip", 1, 1, 1, 1 )
 	chapterToSkipInput = d:add_text_input( 1, 1, 2, 1, 1 )
-	d:add_button("Enable", click_Start,1,3,1,1)
-	d:add_button("Disable", click_Disable,1,4,1,1)
+	d:add_button("Enable", click_Start, 1, 3, 1, 1)
+	d:add_button("Disable", click_Disable, 1, 4, 1, 1)
 end
 
 --Verify input options and enter check loop
 function click_Start()
-	vlc.msg.info("Enabling chapter skipper.")
+	vlc.msg.info("Enabling chapter skipper")
 	chapterToSkip = tonumber(chapterToSkipInput:get_text())
 	vlc.msg.info("Target chapter:")
 	vlc.msg.info(chapterToSkip)
@@ -78,7 +79,7 @@ end
 --Disable check loop.
 function click_Disable()
 	d:hide()
-	vlc.msg.info("Disabled chapter skipper.")
+	vlc.msg.info("Disabled chapter skipper")
 	deactivate()
 end
 
@@ -88,43 +89,17 @@ function start_checker()
 
 	vlc.msg.info("Running chapter skipper")
 
-	recheck_chapter_skip()
+	while keep_checking do
+		chapter_skip_check()
+	end
+
+	vlc.msg.info("Ending chapter skipper")
 end
 
 --Run on plugin deactivation
 function deactivate()
 	keep_checking = false
-	vlc.msg.info("Deactivated chapter skipper.")
-end
-
---[[
-OS-based sleep - this is why the extension triggers not responding prompts. 
-Could be fixed if a way is found to get access to FFI from the bundled VLC lua or if VLC re-allows callbacks in it.
-There is a new chapter internal callback that would greatly simplify the checks (see debug messages), 
-but it's not available to extensions.
-
-Right now, because extensions are single-threaded, and this loop makes os.time() calls to the CPU 
-and because VLC has a timeout check for extensions, it thinks the extension has crashed after
-a while.
---]]
-function sleep(s)
-  if keep_checking == true then
-  	vlc.msg.info("Sleeping...")
-  
-	local ntime = os.time() + s
-	repeat until os.time() > ntime
-	
-	vlc.msg.info("Sleep done...")
-  end
-end
-
---Will re-run check between sleeps.
-function recheck_chapter_skip()
-	if keep_checking then
-		vlc.msg.info("Rechecking chapter skip...")
-		sleep(sleep_duration)
-		chapter_skip_check()
-	end
+	vlc.msg.info("Deactivated chapter skipper")
 end
 
 -- If the current chapter matches the one we want to skip, skip it.
@@ -135,9 +110,6 @@ function chapter_skip_check()
 		vlc.msg.info("Skipping chapter")
 		skip_chapter()
 		deactivate()
-	else 
-		vlc.msg.info("Not at target chapter")
-		recheck_chapter_skip()
 	end
 end
 
