@@ -112,8 +112,13 @@ function start_checker()
 
 	vlc.msg.info("Running chapter skipper")
 
+	local i = 0
 	while keep_checking do
-		chapter_skip_check()
+		if i % 100000 == 0 then
+			vlc.msg.info("Check " .. i)
+			chapter_skip_check()
+		end
+		i = i + 1
 	end
 end
 
